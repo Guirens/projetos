@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload de Arquivo e Visualização de Metadados</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>Upload de Arquivo e Visualização de Metadados</h1>
+
+        <!-- Formulário de upload de arquivo -->
+        <div class="upload-section">
+            <h2>Carregar Arquivo</h2>
+            <form id="uploadForm" enctype="multipart/form-data">
+                <input type="file" name="file" id="fileInput" required>
+                <button type="submit">Enviar Arquivo</button>
+            </form>
+            <div id="uploadStatus"></div>
+        </div>
+
+        <!-- Exibição dos metadados -->
+        <div class="metadata-section">
+            <h2>Metadados dos Arquivos</h2>
+            <button id="loadMetadataBtn">Carregar Metadados</button>
+            <table id="metadataTable">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Nome do Arquivo</th>
+                        <th>Tipo do Arquivo</th>
+                        <th>Data de Modificação</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Os metadados serão injetados aqui -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        // Função para lidar com o envio de arquivos
+        document.getElementById('uploadForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+            let fileInput = document.getElementById('fileInput');
+            let formData = new FormData();
+            formData.append('file', fileInput.files[0]);
+
+            fetch('/upload', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                const uploadStatus = document.getElementById('uploadStatus');
+                if (data.message) {
+                    uploadStatus.textContent = data.message;
+                    uploadStatus.style.color = 'green';
+                } else {
+                    uploadStatus.textContent = data.error || "Erro desconhecido";
+                    uploadStatus.style.color = 'red';
+                }
+            })
+            .catch(error => {
+                console.error('Erro no upload:', error);
+            });
+        });
+
+        // Função para carregar e exibir metadados
+        document.getElementById('loadMetadataBtn').addEventListener('click', function() {
+            fetch('/metadata')
+                .then(response => response.json())
+                .then(data => {
+                    const tableBody = document.querySelector('#metadataTable tbody');
+                    tableBody.innerHTML = ''; // Limpa a tabela antes de preencher
+
+                    data.forEach(metadata => {
+                        let row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>${metadata.ID}</td>
+                            <td>${metadata['File Name']}</td>
+                            <td>${metadata['File Type']}</td>
+                            <td>${metadata['Date Modified']}</td>
+                        `;
+                        tableBody.appendChild(row);
+                    });
+                })
+                .catch(error => {
+                    console.error('Erro ao carregar metadados:', error);
+                });
+        });
+    </script>
+</body>
+</html>
